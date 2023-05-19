@@ -10,23 +10,32 @@ import static java.lang.Thread.sleep;
  *
  * @author User
  */
-public class Clock {
-    public Clock(Barber barber, CustomerGenerator cg){
-        this.barber = barber;
-        this.cg = cg;
+public class Clock extends Thread{
+    volatile Boolean closingTime;
+    private Plane plane;
+    public Clock(){
+        //this.plane = plane;
+        closingTime = false;
     }
     
     public void run(){
         try{
-            sleep(30000);
+            //rmb to change
+            sleep(10000);
             notifyClosingTime();
         }catch(InterruptedException ex){
             ex.printStackTrace();
         }
     }
     public synchronized void notifyClosingTime(){
-        System.out.println("Clock: Barber shop is closed. No customers can enter");
-        barber.closingTime=true;
-        cg.closingTime=true;
+        try{
+            //2 seconds for to accept landing message that is < 2 second before the time close
+            Thread.sleep(2000);
+        }catch(InterruptedException ex){
+            ex.printStackTrace();
+        }
+        System.out.println("-------Notification: Airport is closed. No more incoming planes.-------");
+        System.out.println("-------Allowing planes on the airport ground to finsih their process and depart-------");
+        closingTime = true;
     }
 }
