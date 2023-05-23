@@ -7,39 +7,59 @@ import java.util.Random;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+
 /**
  *
  * @author User
  */
 public class Airport{
+    private final BlockingQueue<Plane> planes;
     private final BlockingQueue<Plane> landingQueue;
     private final BlockingQueue<Plane> departingQueue;
     private final BlockingQueue<Plane> emergencyQueue;
-    private final Lock runwayLock;
     private final Semaphore runwaySemaphore = new Semaphore(1);
     private final Semaphore gate1Semaphore = new Semaphore(1);
     private final Semaphore gate2Semaphore = new Semaphore(1);
     private final Semaphore gate3Semaphore = new Semaphore(1);
     private final Semaphore groundSemaphore = new Semaphore(3);
-    private Clock clock;
     private RefuelingTruck refuel;
-    private Counter counter;
     private int gateNo;
     private int planeOnGround;
+    private Clock clock;
     
-     public Airport(RefuelingTruck refuel, Counter counter) {
+     public Airport(Clock clock) {
+        planes = new LinkedBlockingQueue<>();
         landingQueue = new LinkedBlockingQueue<>();
         departingQueue = new LinkedBlockingQueue<>();
         emergencyQueue = new LinkedBlockingQueue<>();
-        runwayLock = new ReentrantLock(true); // true parameter enables fair locking;
-        this.refuel = refuel;
+        refuel = new RefuelingTruck();
         gateNo = 0;
+        this.clock = clock;
     }
      
     public int getPlaneOnGround(){
-        return 3-groundSemaphore.availablePermits();
+        planeOnGround = 3-groundSemaphore.availablePermits();
+        return planeOnGround ;
+    }
+    
+    public void enterPlanesQueue(Plane plane){
+        planes.add(plane);
+    }
+    
+    public void getPlanesWaitingTime(){
+        while(!planes.isEmpty()){
+            Plane plane = planes.peek();
+            System.out.println("Maximum waiting time of "+plane.getPlaneName()+": "+plane.getMaxWaitingTime()+"ms");
+            System.out.println("Minimum waiting time of "+plane.getPlaneName()+": "+plane.getMinWaitingTime()+"ms");
+            System.out.println("Average waiting time of "+plane.getPlaneName()+": "+plane.getAverageWaitingTime()+"ms");
+            System.out.println();
+            try{
+                planes.take();
+            }catch(InterruptedException e){
+                e.printStackTrace();
+            }
+        }
+        
     }
     
     private void enterQueue( Plane plane, BlockingQueue<Plane> queue){
@@ -73,7 +93,7 @@ public class Airport{
                 return;
             }
             //Check number of planes on airport ground
-            System.out.printf("%s has landed on the runway. [Current planes on airport ground: "+ getPlaneOnGround() +"]\n", plane.getPlaneName());
+            System.out.printf("%s has landed on the runway. \n", plane.getPlaneName());
 
 //        }
 //         else {
@@ -109,39 +129,58 @@ public class Airport{
     
     public void land(Plane plane) throws InterruptedException {
         enterQueue(plane, landingQueue);
-        System.out.printf("%s is getting permission to coast to runway to land...\n", plane.getPlaneName());
+        
+        if(plane.getFuelLevel() < plane.getMIN_FUEL_LEVEL()){
+            System.out.printf("EMERGENCY LANDING REQUIRED: %s is getting permission to land on the runway...\n", plane.getPlaneName());
+        }else{
+            System.out.printf("%s is getting permission to land on the runway...\n", plane.getPlaneName());
+        }
+        
         long startTime = System.currentTimeMillis();
         while (true) {
-            runwaySemaphore.acquire(); // acquire the runway
-            groundSemaphore.acquire(); // acquire the airport ground
-            long endTime = System.currentTimeMillis();
-            long waitingTime = endTime - startTime;
-            try{
-                // Handle emergency landing plane first
-                if (!this.emergencyQueue.isEmpty()) {
-                    System.out.printf("%s: EMERGENCY LANDING REQUIRED. \n", plane.getPlaneName());
-                    handleLand(emergencyQueue, plane);
-                    break;
-                // Handle other landing plane
-                } else{
-                    handleLand(landingQueue, plane);
-                    landingQueue.take();
-                    break;
-                } 
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            //ensure that both ground and runway semaphore can be acquired  
+            if(runwaySemaphore.tryAcquire()){
+                if(groundSemaphore.tryAcquire()){
+                    // permission obtained, stopwatch stop
+                    long endTime = System.currentTimeMillis();
+                    long waitingTime = endTime - startTime;
+                    plane.updateWaitingTime(waitingTime);
+                    try{
+                        // Handle emergency landing plane first
+                        if (!emergencyQueue.isEmpty()&& emergencyQueue.peek()== plane) {
+                            handleLand(emergencyQueue, plane);
+                            emergencyQueue.take();
+                            break;
+                        // Handle other landing plane
+                        } else{
+                            handleLand(landingQueue, plane);
+                            landingQueue.take();
+                            break;
+                        } 
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                }else{
+                    //release groudSemaphore if cant acquire runway semaphore
+                    runwaySemaphore.release();
+                }
+            }    
         }
     }
 
     public void depart(Plane plane) throws InterruptedException {
         System.out.printf("%s is getting permission to coast to runway to depart...\n", plane.getPlaneName());
+        long startTime = System.currentTimeMillis();
         while (true) {
-            if (this.emergencyQueue.isEmpty()) {
+           if((!this.emergencyQueue.isEmpty() && planeOnGround == 3) || this.emergencyQueue.isEmpty()){
                 runwaySemaphore.acquire(); // acquire the lock
+                // permission obtained, stopwatch stop
+                long endTime = System.currentTimeMillis();
+                long waitingTime = endTime - startTime;
+                plane.updateWaitingTime(waitingTime);
                 try {
                     System.out.printf("%s is coasting to the runway to depart...\n", plane.getPlaneName());
-                    Thread.sleep(1);
+                    Thread.sleep(1000);
                     System.out.printf("%s has coasted to the runway to depart.\n", plane.getPlaneName());
                     //release gate semaphore
                     if(gateNo == 1){
@@ -152,18 +191,17 @@ public class Airport{
                         gate3Semaphore.release();
                     }
                     handleDepart(departingQueue, plane);
-                    
-
                     // reduce the fuel level
                     Random rand = new Random();
-                    int fuelUsage = rand.nextInt();
+                    int fuelUsage = rand.nextInt(80);
                     int originalFuelLevel = plane.getFuelLevel();
                     plane.setFuelLevel(originalFuelLevel - fuelUsage);
                     break;
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-            }        
+            }  
+   
         }
     }
     
@@ -192,17 +230,30 @@ public class Airport{
     public void occupyGate(Plane plane) {
         try{
             System.out.printf("%s is getting permission to coast to the gate...\n", plane.getPlaneName());
+            long startTime = System.currentTimeMillis();
             if (gate1Semaphore.tryAcquire()) {
+                // permission obtained, stopwatch stop
+                long endTime = System.currentTimeMillis();
+                long waitingTime = endTime - startTime;
+                plane.updateWaitingTime(waitingTime);
                 System.out.printf("%s is coasting to Gate 1...\n", plane.getPlaneName());
                 Thread.sleep(1000); // simulate refueling time
                 System.out.printf("%s has coasted and docked at Gate 1.\n", plane.getPlaneName());
                 gateNo = 1;
             } else if (gate2Semaphore.tryAcquire()) {
+                // permission obtained, stopwatch stop
+                long endTime = System.currentTimeMillis();
+                long waitingTime = endTime - startTime;
+                plane.updateWaitingTime(waitingTime);
                 System.out.printf("%s is coasting to Gate 2...\n", plane.getPlaneName());
                 Thread.sleep(1000); // simulate refueling time
                 System.out.printf("%s has coasted and docked at Gate 2.\n", plane.getPlaneName());
                 gateNo = 2;
             } else if (gate3Semaphore.tryAcquire()) {
+                // permission obtained, stopwatch stop
+                long endTime = System.currentTimeMillis();
+                long waitingTime = endTime - startTime;
+                plane.updateWaitingTime(waitingTime);
                 System.out.printf("%s is coasting to Gate 3...\n", plane.getPlaneName());
                 Thread.sleep(1000); // simulate refueling time
                 System.out.printf("%s has coasted and docked at Gate 3.\n", plane.getPlaneName());

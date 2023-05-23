@@ -8,15 +8,21 @@ package ccp_assignment;
  *
  * @author User
  */
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+
 public class Report extends Thread {
     private Airport airport;
     private Clock clock;
     private Counter c;
+    private Plane plane;
+    
     Report(Airport airport, Clock clock, Counter c){
         this.airport = airport;
         this.clock = clock;
         this.c = c;
     }
+
     
     public void run(){
         //keeping it awake
@@ -31,7 +37,10 @@ public class Report extends Thread {
             if(clock.closingTime && airport.getPlaneOnGround() == 0){
                 System.out.println("-------Notification: All planes has left the airport.-------");
                 System.out.println("-------REPORT-------");
-                System.out.println("The total passenger: "+c.getTotalPassenger());
+                System.out.println("---WAITING TIME REPORT---");
+                airport.getPlanesWaitingTime();
+                System.out.println("---PASSENGER REPORT---");
+                System.out.println("The total passenger boarded: "+c.getTotalPassenger());
                 return;
             }
         }

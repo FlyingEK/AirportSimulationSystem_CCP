@@ -21,19 +21,13 @@ public class Clock extends Thread{
     public void run(){
         try{
             //rmb to change
-            sleep(10000);
+            sleep(60000);
             notifyClosingTime();
         }catch(InterruptedException ex){
             ex.printStackTrace();
         }
     }
     public synchronized void notifyClosingTime(){
-        try{
-            //2 seconds for to accept landing message that is < 2 second before the time close
-            Thread.sleep(2000);
-        }catch(InterruptedException ex){
-            ex.printStackTrace();
-        }
         System.out.println("-------Notification: Airport is closed. No more incoming planes.-------");
         System.out.println("-------Allowing planes on the airport ground to finsih their process and depart-------");
         closingTime = true;

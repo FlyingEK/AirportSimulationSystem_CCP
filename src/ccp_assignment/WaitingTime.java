@@ -5,16 +5,16 @@
 package ccp_assignment;
 
 import java.util.concurrent.atomic.AtomicLong;
-
+import java.util.concurrent.atomic.AtomicInteger;
 /**
  *
  * @author User
  */
 public class WaitingTime {
-    AtomicLong maxWaitingTime = new AtomicLong(0);
+    AtomicLong maxWaitingTime = new AtomicLong();
     AtomicLong minWaitingTime = new AtomicLong(0);
     AtomicLong totalWaitingTime = new AtomicLong(0);
-    AtomicLong waitCount = new AtomicLong(0);
+    AtomicInteger waitCount = new AtomicInteger(0);
     
    public long getMaxWaitingTime() {
         return maxWaitingTime.longValue();
@@ -40,11 +40,21 @@ public class WaitingTime {
         this.totalWaitingTime.getAndAdd(waitingTime);
     }
 
-    public long getWaitCount() {
-        return waitCount.longValue();
+    public int getWaitCount() {
+        return waitCount.intValue();
     }
 
     public void addWaitCount() {
         waitCount.getAndIncrement();
+    }
+    
+    public long getAverageWaitingTime(){
+        long average = 0;
+        try{
+            average = getTotalWaitingTime()/getWaitCount();
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+        return average;
     }
 }

@@ -23,6 +23,9 @@ import java.util.concurrent.atomic.AtomicInteger;
     private WaitingTime waitingTime;
     public Boolean closingTime;
     private Clock clock;
+    private long maxWaitingTime;
+    private long minWaitingTime;
+    private long averageWaitingTime;
     //private max, min, total Waiting time
     
     public Plane(){
@@ -41,6 +44,7 @@ import java.util.concurrent.atomic.AtomicInteger;
         //closingTime = false;
         this.clock = clock;
         waitingTime = new WaitingTime();
+        airport.enterPlanesQueue(this);
     }
     
     public static int getPlaneNum(){
@@ -70,10 +74,29 @@ import java.util.concurrent.atomic.AtomicInteger;
     public void setClosingTime(Boolean closingTime) {
         this.closingTime = closingTime;
     }
+
+    public long getMaxWaitingTime() {
+        maxWaitingTime = waitingTime.getMaxWaitingTime();
+        return maxWaitingTime;
+    }
+
+    public long getMinWaitingTime() {
+        minWaitingTime = waitingTime.getMinWaitingTime();
+        return minWaitingTime;
+    }
+
+    public long getAverageWaitingTime() {
+        averageWaitingTime = waitingTime.getAverageWaitingTime();
+        return averageWaitingTime;
+    }
     
-    private void updateWaitingTime(long time){
+    public void updateWaitingTime(long time){
         // Update max and min waiting time
-        if (time > waitingTime.getMaxWaitingTime()){
+        if(waitingTime.getWaitCount() == 0){
+            waitingTime.setMaxWaitingTime(time);
+            waitingTime.setMinWaitingTime(time);
+        }
+        else if (time > waitingTime.getMaxWaitingTime()){
             waitingTime.setMaxWaitingTime(time);
         }else if (time < waitingTime.getMinWaitingTime()){
             waitingTime.setMinWaitingTime(time);
@@ -82,10 +105,12 @@ import java.util.concurrent.atomic.AtomicInteger;
         waitingTime.addWaitCount();
     }
     
+    
+    
     //wip : at which gate.
     public synchronized void disembark() {
         Random rand = new Random();
-        passengerNum = rand.nextInt(5);
+        passengerNum = rand.nextInt(50);
         int leftPassengerNum = passengerNum;
         System.out.printf("%s is disembarking " +passengerNum+ " passengers...\n", planeName);
         
@@ -122,7 +147,7 @@ import java.util.concurrent.atomic.AtomicInteger;
     public synchronized void embark() {
         Random rand = new Random();
         //change
-        passengerNum = rand.nextInt(5);
+        passengerNum = rand.nextInt(50);
         int j = 1;
         System.out.printf("%s is embarking " +passengerNum+ " passengers...\n", planeName);
         for (int i = passengerNum; i > 0 ; i--) {

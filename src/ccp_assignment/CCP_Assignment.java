@@ -19,9 +19,9 @@ public class CCP_Assignment {
         // TODO code application logic here
 
         Random rand = new Random();    
-        Airport airport = new Airport();
-        Counter c = new Counter();
         Clock clock = new Clock();
+        Airport airport = new Airport(clock);
+        Counter c = new Counter();
         Report report = new Report(airport,clock,c);
         clock.start();
         report.start();
@@ -32,39 +32,39 @@ public class CCP_Assignment {
         Plane plane5 = new Plane("Plane 5", c, airport, clock);
         Plane plane6 = new Plane("Plane 6", c, airport, clock);
         
-//        try{
-//            plane1.start();
-//            TimeUnit.SECONDS.sleep(rand.nextInt(4));
-//            plane2.start();
-//            TimeUnit.SECONDS.sleep(rand.nextInt(4));
-//            plane3.start();
-//            TimeUnit.SECONDS.sleep(rand.nextInt(4));
-//            plane4.start();
-//            TimeUnit.SECONDS.sleep(rand.nextInt(4));
-//            plane5.start();
-//            TimeUnit.SECONDS.sleep(rand.nextInt(4));
-//            plane6.start();
-//            TimeUnit.SECONDS.sleep(rand.nextInt(4));
-//        }catch(InterruptedException e){
-//            e.printStackTrace();
-//        }
-
         try{
             plane1.start();
-            TimeUnit.SECONDS.sleep(3);
+            TimeUnit.SECONDS.sleep(rand.nextInt(4));
             plane2.start();
-            TimeUnit.SECONDS.sleep(3);
+            TimeUnit.SECONDS.sleep(rand.nextInt(4));
             plane3.start();
-            TimeUnit.SECONDS.sleep(3);
+            TimeUnit.SECONDS.sleep(rand.nextInt(4));
             plane4.start();
-            TimeUnit.SECONDS.sleep(3);
+            TimeUnit.SECONDS.sleep(rand.nextInt(4));
             plane5.start();
-            TimeUnit.SECONDS.sleep(3);
+            TimeUnit.SECONDS.sleep(rand.nextInt(4));
             plane6.start();
-            TimeUnit.SECONDS.sleep(3);
+            TimeUnit.SECONDS.sleep(rand.nextInt(4));
         }catch(InterruptedException e){
             e.printStackTrace();
         }
+//
+//        try{
+//            plane1.start();
+//            TimeUnit.SECONDS.sleep(3);
+//            plane2.start();
+//            TimeUnit.SECONDS.sleep(3);
+//            plane3.start();
+//            TimeUnit.SECONDS.sleep(3);
+//            plane4.start();
+//            TimeUnit.SECONDS.sleep(3);
+//            plane5.start();
+//            TimeUnit.SECONDS.sleep(3);
+//            plane6.start();
+//            TimeUnit.SECONDS.sleep(3);
+//        }catch(InterruptedException e){
+//            e.printStackTrace();
+//        }
         // A plane thread start every 1-3 seconds
 //        ExecutorService executorService = Executors.newFixedThreadPool(6);
 //        ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(1);
@@ -79,12 +79,13 @@ public class CCP_Assignment {
 ////executorService.execute(plane); // Start the plane thread
         // check plane num in airport if()
         //System.out.print("" + c.getTotalPassenger());
-//        while(true){
-//            try{
-//                Thread.sleep(1000);
-//                
-//            }catch(InterruptedException e){
-//            e.printStackTrace();
-//            }
+            while(true){
+                try{
+                    Thread.sleep(1000);
+                    
+                }catch(InterruptedException e){
+                e.printStackTrace();
+                }
+            }
        }
 }
