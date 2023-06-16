@@ -14,13 +14,11 @@ public class Clock extends Thread{
     volatile Boolean closingTime;
     private Plane plane;
     public Clock(){
-        //this.plane = plane;
         closingTime = false;
     }
     
     public void run(){
         try{
-            //rmb to change
             sleep(60000);
             notifyClosingTime();
         }catch(InterruptedException ex){

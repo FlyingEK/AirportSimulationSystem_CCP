@@ -8,8 +8,7 @@ package ccp_assignment;
  *
  * @author User
  */
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
+
 
 public class Report extends Thread {
     private Airport airport;
@@ -25,22 +24,20 @@ public class Report extends Thread {
 
     
     public void run(){
-        //keeping it awake
-//        while(!clock.closingTime){
-//            try{
-//                Thread.sleep(5000);
-//            }catch(InterruptedException e){
-//                e.printStackTrace();
-//            }
-//        }
         while (true){
             if(clock.closingTime && airport.getPlaneOnGround() == 0){
                 System.out.println("-------Notification: All planes has left the airport.-------");
-                System.out.println("-------REPORT-------");
+                System.out.println("-------STATISTIC REPORT-------");
+                System.out.println("---AIRPORT REPORT---");
+                System.out.println("The current planes on the airport ground: "+ airport.getPlaneOnGround());
+                System.out.println("Number of plane at Gate 1: " + airport.getPlaneNoGate1());
+                System.out.println("Number of plane at Gate 2: " + airport.getPlaneNoGate2());
+                System.out.println("Number of plane at Gate 3: " + airport.getPlaneNoGate3());
+                System.out.println("---PLANE/PASSENGER REPORT---");
+                System.out.println("The planes served: "+airport.getTotalPlane());
+                System.out.println("The total passenger boarded: "+c.getTotalPassenger());
                 System.out.println("---WAITING TIME REPORT---");
                 airport.getPlanesWaitingTime();
-                System.out.println("---PASSENGER REPORT---");
-                System.out.println("The total passenger boarded: "+c.getTotalPassenger());
                 return;
             }
         }
